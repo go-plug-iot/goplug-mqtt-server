@@ -11,10 +11,33 @@ const typeDefs = gql`
     current: String
   }
 
-  type MutationResponse {
+  type User {
+    _id: String!
+    firstName: String!
+    lastName: String!
+    emailAddress: String!
+    isAdmin: Boolean!
+  }
+
+  interface MutationResponse {
     code: String!
     success: Boolean!
     message: String!
+  }
+
+  type CreateUserResponse implements MutationResponse {
+    code: String!
+    success: Boolean!
+    message: String!
+    user: User
+    token: String
+  }
+
+  type AuthenticationResponse implements MutationResponse {
+    code: String!
+    success: Boolean!
+    message: String!
+    token: String
   }
 
   type Subscription {
@@ -24,13 +47,28 @@ const typeDefs = gql`
   type Sensors {
     id: String!
   }
+
+  input CreateUserInput {
+    firstName: String!
+    lastName: String!
+    emailAddress: String!
+    password: String!
+    firebaseToken: String!
+  }
   type Query {
     sensors: [Sensors!]!
+    getUser: User!
+    checkEmailAddress(emailAddress: String!): Boolean!
   }
 
   type Mutation {
     turnOnSwitch(switchId: String!): MutationResponse!
     turnOffSwitch(switchId: String!): MutationResponse!
+    authenticateUser(
+      emailAddress: String!
+      firebaseToken: String!
+    ): AuthenticationResponse!
+    createUser(userDetails: CreateUserInput): CreateUserResponse!
   }
   schema {
     query: Query

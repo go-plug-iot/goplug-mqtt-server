@@ -1,20 +1,39 @@
-import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@apollo/server/express4';
-import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
-import { createServer } from 'http';
-import express from 'express';
-import { makeExecutableSchema } from '@graphql-tools/schema';
-import { WebSocketServer } from 'ws';
-import { useServer } from 'graphql-ws/lib/use/ws';
-import bodyParser from 'body-parser';
-import cors from 'cors';
-import resolvers from './resolvers.js';
-import typeDefs from './schema.js';
+import { ApolloServer } from "@apollo/server";
+import { expressMiddleware } from "@apollo/server/express4";
+import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
+import { createServer } from "http";
+import express from "express";
+import { makeExecutableSchema } from "@graphql-tools/schema";
+import { WebSocketServer } from "ws";
+import { useServer } from "graphql-ws/lib/use/ws";
+import bodyParser from "body-parser";
+import cors from "cors";
+import mongoose from "mongoose";
+
+import resolvers from "./resolvers.js";
+import typeDefs from "./schema.js";
+import { initializeFirebaseAdmin } from "./configs/firebase.js";
 
 // Create the schema, which will be used separately by ApolloServer and
 // the WebSocket server.
 const schema = makeExecutableSchema({ typeDefs, resolvers });
 
+const main = async () => {
+  //const MONGO_URI = process.env.MONGO_URI;
+  //console.log(process.env.PORT);
+  //FIXME: Make it env
+  try {
+    await mongoose.connect(
+      "mongodb+srv://shanish357:23CfuRCDBd0zWNP9@cluster0.ttjkyfh.mongodb.net/test"
+    );
+    console.log("Connected to MongoDB");
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+main();
+initializeFirebaseAdmin();
 // Create an Express app and HTTP server; we will attach both the WebSocket
 // server and the ApolloServer to this HTTP server.
 const app = express();
@@ -23,7 +42,7 @@ const httpServer = createServer(app);
 // Create our WebSocket server using the HTTP server we just set up.
 const wsServer = new WebSocketServer({
   server: httpServer,
-  path: '/graphql',
+  path: "/graphql",
 });
 // Save the returned server's info so we can shutdown this server later
 const serverCleanup = useServer({ schema }, wsServer);
@@ -49,7 +68,7 @@ const server = new ApolloServer({
 });
 
 await server.start();
-app.use('/graphql', cors(), bodyParser.json(), expressMiddleware(server));
+app.use("/graphql", cors(), bodyParser.json(), expressMiddleware(server));
 
 const PORT = 4000;
 // Now that our HTTP server is fully set up, we can listen to it.

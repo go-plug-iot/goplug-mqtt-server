@@ -1,9 +1,16 @@
 import { MQTTPubSub } from "graphql-mqtt-subscriptions";
 import { connect } from "mqtt";
+import jwt from "jsonwebtoken";
 
-const client = connect("mqtt://0.tcp.ap.ngrok.io:17340", {
+import { firebaseAuth } from "./configs/firebase.js";
+import User from "./models/user.js";
+
+const client = connect("mqtt://0.tcp.ap.ngrok.io:18657", {
   reconnectPeriod: 1000,
 });
+
+//FIXME: Fix with proper jwt secret
+const JWT_SECRET = "secret";
 
 // @ts-nocheck
 const pubsub = new MQTTPubSub({
@@ -14,6 +21,17 @@ const resolvers = {
   Query: {
     sensors: () => {
       return [{ id: "Sensor1" }, { id: "Sensor2" }];
+    },
+    checkEmailAddress: async (
+      _,
+      { emailAddress }: { emailAddress: string }
+    ) => {
+      try {
+        const user = await User.findOne({ emailAddress }).exec();
+        return !!user;
+      } catch (err) {
+        console.log(err);
+      }
     },
   },
   Mutation: {
@@ -36,6 +54,78 @@ const resolvers = {
         message: `Turning off SWITCH ${args.switchId}`,
         success: true,
       };
+    },
+    createUser: async (
+      _,
+      {
+        userDetails,
+      }: {
+        userDetails: {
+          firstName: string;
+          lastName: string;
+          emailAddress: string;
+          firebaseToken: string;
+        };
+      }
+    ) => {
+      try {
+        const { firebaseToken, ...userInfo } = userDetails;
+        const user = await User.create(userInfo);
+        const isFirebaseTokenValid = await firebaseAuth().verifyIdToken(
+          firebaseToken
+        );
+        if (isFirebaseTokenValid) {
+          const jwtToken = jwt.sign({ data: { id: user.id } }, JWT_SECRET, {
+            expiresIn: "4h",
+          });
+          return {
+            code: 200,
+            success: true,
+            message: "User has been created",
+            user,
+            token: jwtToken,
+          };
+        }
+      } catch (err) {
+        return {
+          code: err.extensions.response.status,
+          success: false,
+          message: err.extensions.response.body,
+          user: null,
+        };
+      }
+    },
+    authenticateUser: async (
+      _,
+      {
+        emailAddress,
+        firebaseToken,
+      }: { emailAddress: string; firebaseToken: string }
+    ) => {
+      try {
+        const isFirebaseTokenValid = await firebaseAuth().verifyIdToken(
+          firebaseToken
+        );
+        if (isFirebaseTokenValid) {
+          const user = await User.findOne({ emailAddress }).exec();
+          const jwtToken = jwt.sign({ data: { id: user.id } }, JWT_SECRET, {
+            expiresIn: "4h",
+          });
+          return {
+            code: 200,
+            success: true,
+            message: "Token has been generated",
+            token: jwtToken,
+          };
+        }
+      } catch (err) {
+        console.log(err);
+        return {
+          code: 400,
+          success: false,
+          message: "Token could not be generated",
+        };
+      }
     },
   },
   Subscription: {
