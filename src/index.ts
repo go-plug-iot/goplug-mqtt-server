@@ -1,7 +1,7 @@
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
-import { createServer } from "http";
+import { createServer, request } from "http";
 import express from "express";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { WebSocketServer } from "ws";
@@ -9,10 +9,13 @@ import { useServer } from "graphql-ws/lib/use/ws";
 import bodyParser from "body-parser";
 import cors from "cors";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
 
 import resolvers from "./resolvers.js";
 import typeDefs from "./schema.js";
 import { initializeFirebaseAdmin } from "./configs/firebase.js";
+
+const JWT_SECRET = "secret";
 
 // Create the schema, which will be used separately by ApolloServer and
 // the WebSocket server.
@@ -68,7 +71,30 @@ const server = new ApolloServer({
 });
 
 await server.start();
-app.use("/graphql", cors(), bodyParser.json(), expressMiddleware(server));
+app.use(
+  "/graphql",
+  cors(),
+  bodyParser.json(),
+  expressMiddleware(server, {
+    context: async ({ req, res }) => {
+      // Get the user token from the headers.
+      if (!req.headers.authorization) return { userId: null };
+      const requestToken = req.headers.authorization;
+      //console.log(requestToken);
+      // Try to retrieve a user with the token
+      const decodedDetails = jwt.verify(
+        requestToken,
+        JWT_SECRET
+      ) as unknown as {
+        data: { id: string };
+      };
+
+      console.log(decodedDetails);
+      // Add the user to the context
+      return { userId: decodedDetails.data.id };
+    },
+  })
+);
 
 const PORT = 4000;
 // Now that our HTTP server is fully set up, we can listen to it.

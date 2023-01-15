@@ -33,6 +33,21 @@ const resolvers = {
         console.log(err);
       }
     },
+    getUser: async (_, __, { userId }: { userId: string }) => {
+      console.log(userId);
+      if (!userId) return null;
+      try {
+        //console.log(userId);
+        const user = await User.findById(userId).exec();
+        console.log({ ...user.toJSON(), id: user.id });
+        return {
+          ...user.toJSON(),
+          id: user.id,
+        };
+      } catch (err) {
+        return err;
+      }
+    },
   },
   Mutation: {
     turnOnSwitch: (_, args: { switchId: string }) => {

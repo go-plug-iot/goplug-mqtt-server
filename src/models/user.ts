@@ -15,6 +15,8 @@ const userSchema = new Schema<IUser>({
   isAdmin: { type: Boolean, default: false },
 });
 
+userSchema.set("toJSON", { virtuals: true });
+
 const User = model<IUser>("User", userSchema);
 
 export default User;
