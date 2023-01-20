@@ -6,4 +6,4 @@ steps:
   - '-c'
   - |
     set -x && \
-    gcloud compute ssh go-plug-vm-instance --zone=asia-southeast1-b --command='/bin/sh /home/cpc357_group5/pull.sh
+    gcloud compute ssh go-plug-vm-instance --zone=asia-southeast1-b --command='/bin/sh /home/cpc357_group5/pull.sh'
