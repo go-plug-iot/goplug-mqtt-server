@@ -1,0 +1,9 @@
+steps:
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: Update production server
+  entrypoint: /bin/sh
+  args:
+  - '-c'
+  - |
+    set -x && \
+    gcloud compute ssh go-plug-vm-instance --zone=asia-southeast1-b --command='/bin/sh /home/cpc357_group5/pull.sh'

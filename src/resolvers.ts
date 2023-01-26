@@ -33,6 +33,7 @@ export type ActivityPayload = {
 const resolvers = {
   Query: {
     sensors: () => {
+      console.log("Hello");
       return [{ id: "Sensor1" }, { id: "Sensor2" }];
     },
     checkEmailAddress: async (
