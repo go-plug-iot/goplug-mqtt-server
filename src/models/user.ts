@@ -1,9 +1,13 @@
-import { Schema, model, connect } from "mongoose";
+import { Schema, model, connect, Document } from "mongoose";
 
-interface IUser {
+export interface IUser extends Document {
   firstName: string;
   lastName: string;
   emailAddress: string;
+  budget: number;
+  quota: { usage: number; startDate: Date };
+  fcmToken: string;
+  bluetoothUUID: string;
   isAdmin: boolean;
 }
 
@@ -12,6 +16,10 @@ const userSchema = new Schema<IUser>({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   emailAddress: { type: String, required: true },
+  budget: { type: Number, required: true },
+  quota: { type: Number, required: true },
+  fcmToken: { type: String, required: true },
+  bluetoothUUID: { type: String },
   isAdmin: { type: Boolean, default: false },
 });
 
